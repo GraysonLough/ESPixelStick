@@ -21,7 +21,11 @@
 #define ESPIXELSTICK_H
 
 /* Name and version */
+#ifdef RENMODE
+const char VERSION[] PROGMEM = "ESPRenStick v1.0";
+#else
 const char VERSION[] PROGMEM = "ESPixelStick v1.0";
+#endif
 
 #define HTTP_PORT   80  /* Default web server port */
 #define DATA_PIN    0   /* Pixel output - GPIO0 */
@@ -29,7 +33,7 @@ const char VERSION[] PROGMEM = "ESPixelStick v1.0";
 
 /* Configuration ID and Version */
 #define CONFIG_VERSION 1;
-const uint8_t CONFIG_ID[4] PROGMEM = { 'F', 'O', 'R', 'K'};
+const uint8_t CONFIG_ID[4] PROGMEM = { 'F', 'O', 'R', '2'};
 
 /* Configuration structure */
 typedef struct {
@@ -56,6 +60,10 @@ typedef struct {
     uint8_t     pixel_type;     /* Pixel type */
     uint8_t     pixel_color;    /* Pixel color order */
     float       gamma;          /* Value used to build gamma correction table */
+	
+	/* Renard config  */
+	uint16_t channel_count;		/* Number of channels */
+	uint16_t baud;				/* Baudrate of Serial Port */
 } __attribute__((packed)) config_t;
 
 /* Globals */

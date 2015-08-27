@@ -21,19 +21,19 @@
 #define ESPIXELSTICK_H
 
 /* Name and version */
-#ifdef RENMODE
-const char VERSION[] PROGMEM = "ESPRenStick v1.0";
-#else
-const char VERSION[] PROGMEM = "ESPixelStick v1.0";
-#endif
+const char VERSION[] PROGMEM = "ESPMultiStick v1.0";
+
 
 #define HTTP_PORT   80  /* Default web server port */
 #define DATA_PIN    0   /* Pixel output - GPIO0 */
 #define EEPROM_BASE 0   /* EEPROM configuration base address */
 
+#define OUTPIXEL 0
+#define OUTRENARD 1
+
 /* Configuration ID and Version */
 #define CONFIG_VERSION 1;
-const uint8_t CONFIG_ID[4] PROGMEM = { 'F', 'O', 'R', '2'};
+const uint8_t CONFIG_ID[4] PROGMEM = { 'F', 'O', 'R', '3'};
 
 /* Configuration structure */
 typedef struct {
@@ -52,7 +52,10 @@ typedef struct {
     uint8_t     gateway[4];
     uint8_t     dhcp;           /* DHCP enabled boolean */
     uint8_t     multicast;      /* Multicast listener enabled boolean */
-
+    
+    /*output selection */
+    uint8_t     output;         /* Output selection  */
+    
     /* dmx and pixel config */
     uint16_t    universe;       /* Universe to listen for */
     uint16_t    channel_start;  /* Channel to start listening at - 1 based */

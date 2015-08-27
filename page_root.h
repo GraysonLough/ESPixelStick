@@ -9,7 +9,7 @@ const char PAGE_ROOT[] PROGMEM = R"=====(
 <strong>ESPixelStick Admin</strong>
 <hr>
 <a href="config/net.html" style="width:250px" class="btn btn--m btn--blue">Network Configuration</a><br>
-<a href="config/pixel.html" style="width:250px" class="btn btn--m btn--blue">Pixel Configuration</a><br>
+<a href="config/output.html" style="width:250px" class="btn btn--m btn--blue">output Configuration</a><br>
 <a href="status/net.html" style="width:250px" class="btn btn--m btn--blue">Network Information</a><br>
 <a href="status/e131.html" style="width:250px" class="btn btn--m btn--blue">E1.31 Status</a><hr>
 <pre id="name"></pre>

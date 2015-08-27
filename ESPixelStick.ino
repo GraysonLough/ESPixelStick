@@ -11,6 +11,7 @@
 * Library Requirements:
 * - E1.31 for Arduino - https://github.com/forkineye/E131
 * - Adafruit NeoPixel - https://github.com/adafruit/Adafruit_NeoPixel
+* - Arduino-Renard -    https://github.com/madsci1016/Arduino-Renard
 *
 *  This program is provided free for you to use in any way that you wish,
 *  subject to the laws and regulations where you are using it.  Due diligence
@@ -24,8 +25,8 @@
 *
 */
 
-#define RENMODE     //define to switch from pixel to Renard output
-//#define DEBUG		//enable debug print statements on main serial port
+
+#define DEBUG		//enable debug print statements on main serial port
 
 
 #include <ESP8266WiFi.h>
@@ -36,6 +37,8 @@
 #include "ESPixelStick.h"
 #include "helpers.h"
 #include <Adafruit_NeoPixel.h>
+#include <Arduino-Renard.h>
+
 
 
 /* Web pages and handlers */
@@ -43,10 +46,7 @@
 #include "page_style.css.h"
 #include "page_root.h"
 #include "page_config_net.h"
-#ifndef RENMODE
-#include "page_config_pixel.h"
-#endif
-#include "page_config_renard.h"
+#include "page_config_output.h"
 #include "page_status_net.h"
 #include "page_status_e131.h"
 
@@ -60,20 +60,21 @@
 #define CHANNEL_START   1       /* Channel to start listening at */
 
 const char ssid[] = "........";        /* Replace with your SSID */
-const char passphrase[] = "........";  /* Replace with your WPA2 passphrase */
+const char passphrase[] = "..........";  /* Replace with your WPA2 passphrase */
 
 /****************************************/
 /*       END - User Configuration       */
 /****************************************/
 
-#ifndef RENMODE
+
 Adafruit_NeoPixel   pixels;
-#endif
+RenardTX renard;
+
 
 void setup() {
 	//We will setup serial later if RENMODE
 #ifdef DEBUG
-    Serial.begin(115200);
+    Serial.begin(57600);
     delay(10);
 
     Serial.println("");
@@ -118,16 +119,19 @@ void setup() {
         Serial.println(F("** Error setting up MDNS responder **"));
     }
 */  
-#ifndef RENMODE
-    /* Configure pixels and initialize output */
-    updatePixelConfig();
-    pixels.setPin(DATA_PIN);
-    pixels.begin();
-    pixels.show();
-#else
+    if(config.output == OUTPIXEL){
+        /* Configure pixels and initialize output */
+        updatePixelConfig();
+        pixels.setPin(DATA_PIN);
+        pixels.begin();
+        pixels.show();
+    }
+    else if(config.output == OUTRENARD){
 	/* Configure Serial Port for Renard Output*/
-	Serial.begin(config.baud);
-#endif
+	//Serial.begin(config.baud);
+	renard.begin(config.channel_count, &Serial, config.baud);
+    }
+
 }
 
 int initWifi() {
@@ -167,22 +171,14 @@ void initWeb() {
     /* HTML Pages */
     web.on("/", []() { web.send(200, "text/html", PAGE_ROOT); });
     web.on("/config/net.html", send_config_net_html);
-#ifndef RENMODE
-    web.on("/config/pixel.html", send_config_pixel_html);
-#else
-	web.on("/config/renard.html", send_config_renard_html);
-#endif
+	web.on("/config/output.html", send_config_output_html);
     web.on("/status/net.html", []() { web.send(200, "text/html", PAGE_STATUS_NET); });
     web.on("/status/e131.html", []() { web.send(200, "text/html", PAGE_STATUS_E131); });
 
     /* AJAX Handlers */
     web.on("/rootvals", send_root_vals_html);
     web.on("/config/netvals", send_config_net_vals_html);
-#ifndef RENMODE
-    web.on("/config/pixelvals", send_config_pixel_vals_html);
-#else
-	web.on("/config/renardvals", send_config_renard_vals_html);
-#endif
+    web.on("/config/outputvals", send_config_output_vals_html);
     web.on("/config/connectionstate", send_connection_state_vals_html);
     web.on("/status/netvals", send_status_net_vals_html);
     web.on("/status/e131vals", send_status_e131_vals_html);
@@ -193,12 +189,12 @@ void initWeb() {
     Serial.print(F("- Web Server started on port "));
     Serial.println(HTTP_PORT);
 }
-#ifndef RENMODE
+
 void updatePixelConfig() {
     pixels.updateType(config.pixel_color + config.pixel_type);
     pixels.updateLength(config.pixel_count);    
 }
-#endif
+
 /* Attempt to load configuration from EEPROM.  Initialize or upgrade as required */
 void loadConfig() {
     EEPROM.get(EEPROM_BASE, config);
@@ -209,7 +205,7 @@ void loadConfig() {
         memset(&config, 0, sizeof(config));
         memcpy_P(config.id, CONFIG_ID, sizeof(config.id));
         config.version = CONFIG_VERSION;
-        strncpy(config.name, "ESPixelStick", sizeof(config.name));
+        strncpy(config.name, "ESPMultiStick", sizeof(config.name));
         strncpy(config.ssid, ssid, sizeof(config.ssid));
         strncpy(config.passphrase, passphrase, sizeof(config.passphrase));
         config.ip[0] = 0; config.ip[1] = 0; config.ip[2] = 0; config.ip[3] = 0;
@@ -219,12 +215,13 @@ void loadConfig() {
         config.multicast = 0;
         config.universe = UNIVERSE;
         config.channel_start = CHANNEL_START;
+        config.output = OUTPIXEL;
         config.pixel_count = NUM_PIXELS;
         config.pixel_type = NEO_KHZ800;
         config.pixel_color = NEO_RGB;
         config.gamma = 1.0;
-	config.channel_count = NUM_CHANNELS;
-	config.baud = 57600;
+        config.channel_count = NUM_CHANNELS;
+        config.baud = 57600;
 
         /* Write the configuration structre */
         EEPROM.put(EEPROM_BASE, config);
@@ -250,15 +247,30 @@ void loop() {
     /* Parse a packet and update pixels */
     if(e131.parsePacket()) {
         if (e131.universe == config.universe) {
-#ifndef RENMODE
-            for (int i = 0; i < config.pixel_count; i++) {
-                int j = i * 3 + (config.channel_start - 1);
-                pixels.setPixelColor(i, e131.data[j], e131.data[j+1], e131.data[j+2]);
+            
+            switch (config.output){
+                case OUTPIXEL:
+
+                for (int i = 0; i < config.pixel_count; i++) {
+                    int j = i * 3 + (config.channel_start - 1);
+                    pixels.setPixelColor(i, e131.data[j], e131.data[j+1], e131.data[j+2]);
+                }
+                pixels.show();
+                
+                break;
+                
+                case OUTRENARD:
+
+                /* pipe our renard data on serial */
+                renard.startPacket();
+                for(int i = 0; i< config.channel_count; i++){
+                    renard.setValue(i, e131.data[config.channel_start - 1]);
+                }
+                renard.sendPacket();
+                
+                break;
             }
-            pixels.show();
-#else
-		/* pipe our renard data on serial */
-#endif
+
         }
     }
 }

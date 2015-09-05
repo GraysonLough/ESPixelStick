@@ -10,6 +10,7 @@ const char PAGE_CONFIG_NET[] PROGMEM = R"=====(
 Connect to Router with these settings:<br>
 <form action="" method="get">
 <table border="0"  cellspacing="0" cellpadding="3" style="width:360px">
+<tr><td align="right">AP Mode:</td><td><select id="apmode" name="apmode"></select></td></tr>
 <tr><td align="right">SSID:</td><td><input type="text" id="ssid" name="ssid" value=""></td></tr>
 <tr><td align="right">Password:</td><td><input type="text" id="password" name="password" value=""></td></tr>
 <tr><td align="right">DHCP:</td><td><input type="checkbox" id="dhcp" name="dhcp"></td></tr>
@@ -54,6 +55,7 @@ void send_config_net_html() {
         config.dhcp = false;
         config.multicast = false;
         for ( uint8_t i = 0; i < web.args(); i++ ) {
+            if (web.argName(i) == "apmode") config.mode = web.arg(i).toInt();
             if (web.argName(i) == "ssid") urldecode(web.arg(i)).toCharArray(config.ssid, sizeof(config.ssid));
             if (web.argName(i) == "password") urldecode(web.arg(i)).toCharArray(config.passphrase, sizeof(config.passphrase));
             if (web.argName(i) == "ip_0") if (checkRange(web.arg(i))) config.ip[0] = web.arg(i).toInt();
@@ -72,7 +74,7 @@ void send_config_net_html() {
             if (web.argName(i) == "multicast") config.multicast = true;
         }
         web.send(200, "text/html", PAGE_RELOAD_NET);
-
+        Serial.print(config.mode);
         saveConfig();
         ESP.restart();
     } else {
@@ -86,6 +88,9 @@ void send_config_net_html() {
 
 void send_config_net_vals_html() {
     String values ="";
+    values += "apmode|opt|" + String("Access Point|") + (String)WIFI_AP + "\n";
+    values += "apmode|opt|" + String("Station|") + (String)WIFI_STA + "\n";
+    values += "apmode|input|" + (String)config.mode + "\n";
     values += "ssid|input|" + String((char*)config.ssid) + "\n";
     values += "password|input|" + String((char*)config.passphrase) + "\n";
     values += "ip_0|input|" + (String)config.ip[0] + "\n";

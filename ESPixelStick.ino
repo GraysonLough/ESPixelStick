@@ -59,8 +59,8 @@
 #define UNIVERSE        1       /* Universe to listen for */
 #define CHANNEL_START   1       /* Channel to start listening at */
 
-const char ssid[] = "........";        /* Replace with your SSID */
-const char passphrase[] = "..........";  /* Replace with your WPA2 passphrase */
+const char ssid[] = ".....";        /* Replace with your SSID */
+const char passphrase[] = "......";  /* Replace with your WPA2 passphrase */
 
 /****************************************/
 /*       END - User Configuration       */
@@ -138,6 +138,23 @@ int initWifi() {
     /* Begin listening for E1.31 data  - we aren't using DNS, so set it to the gateway if static */
     int status = WL_IDLE_STATUS;
 
+    //AP mode, don't load e1.31 library. For initial config
+    if (config.mode == WIFI_AP){
+        WiFi.mode(WIFI_AP);
+        String ssid = "ESP " + (String)ESP.getChipId();
+        WiFi.softAP(ssid.c_str());
+        WiFi.config(IPAddress(config.ip[0], config.ip[1], config.ip[2], config.ip[3]),
+                    IPAddress(config.netmask[0], config.netmask[1], config.netmask[2], config.netmask[3]),
+                    IPAddress(config.gateway[0], config.gateway[1], config.gateway[2], config.gateway[3]),
+                    IPAddress(config.gateway[0], config.gateway[1], config.gateway[2], config.gateway[3]) );
+        
+#ifdef DEBUG
+        Serial.println(F("**** AP MODE STARTED ****"));
+#endif
+        
+       return WL_CONNECTED;
+    }
+    
     if (config.dhcp) {
         if (config.multicast)
             status = e131.beginMulticast(config.ssid, config.passphrase, config.universe);
@@ -208,11 +225,12 @@ void loadConfig() {
         strncpy(config.name, "ESPMultiStick", sizeof(config.name));
         strncpy(config.ssid, ssid, sizeof(config.ssid));
         strncpy(config.passphrase, passphrase, sizeof(config.passphrase));
-        config.ip[0] = 0; config.ip[1] = 0; config.ip[2] = 0; config.ip[3] = 0;
+        config.ip[0] = 192; config.ip[1] = 168; config.ip[2] = 4; config.ip[3] = 1;
         config.netmask[0] = 0; config.netmask[1] = 0; config.netmask[2] = 0; config.netmask[3] = 0;
         config.gateway[0] = 0; config.gateway[1] = 0; config.gateway[2] = 0; config.gateway[3] = 0;
         config.dhcp = 1;
         config.multicast = 0;
+        config.mode = WIFI_AP;
         config.universe = UNIVERSE;
         config.channel_start = CHANNEL_START;
         config.output = OUTPIXEL;
@@ -264,7 +282,7 @@ void loop() {
                 /* pipe our renard data on serial */
                 renard.startPacket();
                 for(int i = 0; i< config.channel_count; i++){
-                    renard.setValue(i, e131.data[config.channel_start - 1]);
+                    renard.setValue(i, e131.data[config.channel_start - 1 + i]);
                 }
                 renard.sendPacket();
                 

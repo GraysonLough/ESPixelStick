@@ -33,7 +33,7 @@ const char VERSION[] PROGMEM = "ESPMultiStick v1.0";
 
 /* Configuration ID and Version */
 #define CONFIG_VERSION 1;
-const uint8_t CONFIG_ID[4] PROGMEM = { 'F', 'O', 'R', '3'};
+const uint8_t CONFIG_ID[4] PROGMEM = { 'F', 'O', 'R', '6'};
 
 /* Configuration structure */
 typedef struct {
@@ -52,6 +52,7 @@ typedef struct {
     uint8_t     gateway[4];
     uint8_t     dhcp;           /* DHCP enabled boolean */
     uint8_t     multicast;      /* Multicast listener enabled boolean */
+    uint8_t     mode;           /* Wifi Mode */
     
     /*output selection */
     uint8_t     output;         /* Output selection  */

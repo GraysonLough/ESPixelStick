@@ -34,6 +34,12 @@ const char PAGE_CONFIG_OUTPUT[] PROGMEM = R"=====(
 </script>
 )=====";
 
+const char PAGE_RELOAD_OUT[] PROGMEM = R"=====(
+<meta http-equiv="refresh" content="2; url=/config/output.html">
+<strong>Please Wait....Configuring and Restarting.</strong>
+)=====";
+
+
 void send_config_output_html() {
     if (web.args() > 0) {  // Save Settings
         for (uint8_t i = 0; i < web.args(); i++) {
@@ -48,7 +54,9 @@ void send_config_output_html() {
             if (web.argName(i) == "channel_count") config.channel_count = web.arg(i).toInt();
             if (web.argName(i) == "baud") config.baud = web.arg(i).toInt();
         }
+        web.send(200, "text/html", PAGE_RELOAD_OUT);
         saveConfig();
+        ESP.restart();
     }
     web.send(200, "text/html", PAGE_CONFIG_OUTPUT);
 }

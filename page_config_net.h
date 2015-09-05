@@ -74,7 +74,6 @@ void send_config_net_html() {
             if (web.argName(i) == "multicast") config.multicast = true;
         }
         web.send(200, "text/html", PAGE_RELOAD_NET);
-        Serial.print(config.mode);
         saveConfig();
         ESP.restart();
     } else {

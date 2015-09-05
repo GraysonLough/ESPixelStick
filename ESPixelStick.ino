@@ -26,7 +26,6 @@
 */
 
 
-#define DEBUG		//enable debug print statements on main serial port
 
 
 #include <ESP8266WiFi.h>
@@ -87,6 +86,15 @@ void setup() {
     /* Load configuration from EEPROM */
     EEPROM.begin(sizeof(config));
     loadConfig();
+    
+    //load config reset interrupt if needed
+#if HWCONFIG == RENWIFI
+    pinMode(2, INPUT_PULLUP);
+    attachInterrupt(2, resetConfig, FALLING);
+#elif HWCONFIG == ESPIXEL
+    pinMode(0, INPUT_PULLUP);
+    attachInterrupt(0, resetConfig, FALLING);
+#endif
 
     /* Fallback to default SSID and passphrase if we fail to connect */
     int status = initWifi();
@@ -131,6 +139,7 @@ void setup() {
 	//Serial.begin(config.baud);
 	renard.begin(config.channel_count, &Serial, config.baud);
     }
+    
 
 }
 
@@ -217,8 +226,16 @@ void loadConfig() {
     EEPROM.get(EEPROM_BASE, config);
     if (memcmp_P(config.id, CONFIG_ID, sizeof(config.id))) {
         Serial.println(F("- No configuration found."));
+        restoreDefaults();
+       
+    } else {
+        Serial.println(F("- Configuration loaded."));
+    }
+}
 
-        /* Initialize configuration structure */
+void restoreDefaults(){
+    
+     /* Initialize configuration structure */
         memset(&config, 0, sizeof(config));
         memcpy_P(config.id, CONFIG_ID, sizeof(config.id));
         config.version = CONFIG_VERSION;
@@ -245,9 +262,31 @@ void loadConfig() {
         EEPROM.put(EEPROM_BASE, config);
         EEPROM.commit();
         Serial.println(F("* Default configuration saved."));
-    } else {
-        Serial.println(F("- Configuration loaded."));
-    }
+    
+    
+    
+}
+
+void resetConfig(){
+    //called if restore defaults button is pressed. Load defaults into EEPROM and reset. 
+#ifdef DEBUG
+        Serial.println(F("**** Reset Config Request ****"));
+#endif
+    restoreDefaults();
+    
+    //wait until button is released.
+#if HWCONFIG == RENWIFI
+    while (digitalRead(2) != HIGH) {}
+#elif HWCONFIG == ESPIXEL
+    while (digitalRead(0) != HIGH) {}
+#endif
+    //restart ESP
+#ifdef DEBUG
+        Serial.println(F("**** Restarting ****"));
+#endif
+    delay(500);
+    ESP.restart();
+    
 }
 
 void saveConfig() {

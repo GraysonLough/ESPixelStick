@@ -20,9 +20,24 @@
 #ifndef ESPIXELSTICK_H
 #define ESPIXELSTICK_H
 
+
+#define DEBUG		//enable debug print statements on main serial port
+
+//this software supports a few different hardware configurations. 
+#define PIXELSTICK 0
+#define RENWIFI 1
+#define ESPIXEL 2
+/********************************
+PIXELSTICK by Shelby Merrick, not sure about his hardware layout
+RENWIFI outpus Renard data on Serial 0 and a config reset jumper shorts IO2 to GND
+ESPIXEL outputs pixel data on IO2 and a config reset button shorts IO0 to GND
+********************************/
+//set hardware configuration
+#define HWCONFIG RENWIFI
+
+
 /* Name and version */
 const char VERSION[] PROGMEM = "ESPMultiStick v1.0";
-
 
 #define HTTP_PORT   80  /* Default web server port */
 #define DATA_PIN    0   /* Pixel output - GPIO0 */

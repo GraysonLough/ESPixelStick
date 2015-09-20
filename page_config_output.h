@@ -82,6 +82,7 @@ void send_config_output_vals_html() {
     values += "baud|opt|" + String("38400|") + (String)38400 + "\n";
     values += "baud|opt|" + String("57600|") + (String)57600 + "\n";
     values += "baud|opt|" + String("115200|") + (String)115200 + "\n";
+    values += "baud|opt|" + String("230400|") + (String)230400 + "\n";
     values += "baud|input|" + (String)config.baud + "\n";
     web.send(200, "text/plain", values);
 }

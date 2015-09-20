@@ -82,7 +82,7 @@ typedef struct {
 	
 	/* Renard config  */
 	uint16_t channel_count;		/* Number of channels */
-	uint16_t baud;				/* Baudrate of Serial Port */
+	uint32_t baud;				/* Baudrate of Serial Port */
 } __attribute__((packed)) config_t;
 
 /* Globals */
